@@ -1,9 +1,12 @@
 <?php
 header("Content-Type: application/json");
-
-// Corrected include path
+// ? Model Database connections 
 include __DIR__ . '/../model/database.php';
-
+// ? Controllers
+require_once __DIR__ . '/../controllers/blog/BlogControllers.php';
+// ? Utils
+require_once __DIR__ . '/../utils/RoutingHelper.php';
+// require_once __DIR__ . '/../utils/RoutingHelper.php';
 // Ensure $pdo is accessible
 if (!isset($pdo)) {
      echo json_encode(['error' => 'Database connection failed']);
@@ -14,33 +17,12 @@ if (!isset($pdo)) {
 $routes = [];
 
 // Define route functions
-route('/', function () use ($pdo) {
-     global $method;
-     if ($method === 'GET') {
-          try {
-               $sql = "SELECT * FROM blog_posts";
-               $stmt = $pdo->prepare($sql);
-               $stmt->execute();
-               $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
-               echo json_encode($result);
-          } catch (PDOException $e) {
-               echo json_encode(['error' => 'Database error: ' . $e->getMessage()], JSON_PRETTY_PRINT);
-          }
-     } else {
-          echo json_encode(['error' => 'Method Not Allowed'], JSON_PRETTY_PRINT);
-     }
+getRoute('/blog', function () use ($pdo) {
+     return Get_All_Blog($pdo);
 });
-
-// Other routes and run function
-route('/login', function () {
-     global $method;
-     if ($method === 'GET') {
-          echo json_encode(['message' => 'Login']);
-     } else {
-          echo json_encode(['error' => 'Method Not Allowed'], JSON_PRETTY_PRINT);
-     }
+postRoute('/blog', function () use ($pdo) {
+     return Post_Blog($pdo);
 });
-
 // Define 404 route and run function as previously
 route('/404', function () {
      echo json_encode(['error' => 'Page Not Found'], JSON_PRETTY_PRINT);
