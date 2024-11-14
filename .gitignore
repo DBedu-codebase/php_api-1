@@ -1,0 +1,30 @@
+.env
+# PHP files
+*.php *.inc *.php3 *.php4 *.php5 *.php6 *.php7 *.phps *.php4css *.phpt
+
+# PHP IDE files
+*.php~ *.phps~ *.phpi *.phpi~ *.phpb *.phpb~ *.swp
+
+# PHP logs
+*.log *.err
+
+# PHP test files
+*.phpt
+
+# PHP temporary files
+*.tmp
+
+# PHP build files
+*.phar
+
+# Composer files
+composer.lock vendor/
+
+# PHPUnit cache
+phpunit.xml.dist
+
+# Xdebug files
+xdebug.log
+
+# Symfony specific files
+var/

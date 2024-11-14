@@ -1,0 +1,9 @@
+{
+     "name": "php_basic/php_api",
+     "require": {
+          "firebase/php-jwt": "^6.10"
+     },
+     "scripts": {
+          "serve": "php -S localhost:9000"
+     }
+}
