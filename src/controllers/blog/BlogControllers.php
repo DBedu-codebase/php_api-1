@@ -3,11 +3,11 @@ $input = json_decode(file_get_contents('php://input'), true);
 function Get_All_Blog($pdo)
 {
      try {
-          $sql = "SELECT * FROM blog_posts";
-          $stmt = $pdo->prepare($sql);
-          $stmt->execute();
-          $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
-          echo json_encode($result);
+          // $sql = "SELECT * FROM blog_posts";
+          // $stmt = $pdo->prepare($sql);
+          // $stmt->execute();
+          // $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+          echo json_encode("Testing");
      } catch (PDOException $e) {
           echo json_encode(['error' => 'Database error: ' . $e->getMessage()], JSON_PRETTY_PRINT);
      }

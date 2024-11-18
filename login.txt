@@ -1,0 +1,60 @@
+<?php
+require_once './vendor/autoload.php';
+
+use Firebase\JWT\JWT;
+use Dotenv\Dotenv;
+
+// Load environment variables
+Dotenv::createImmutable(__DIR__)->load();
+
+header('Content-Type: application/json');
+
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+     http_response_code(405);
+     echo json_encode(['message' => 'Method not allowed']);
+     exit();
+}
+
+// Decode JSON input
+$input = json_decode(file_get_contents('php://input'), true);
+
+// Validate input
+if (empty($input['email']) || empty($input['password'])) {
+     http_response_code(400);
+     echo json_encode(['message' => 'Invalid input']);
+     exit();
+}
+
+// Mock user credentials for authentication
+$valid_user = [
+     'email' => 'johndoe@example.com',
+     'password' => 'qwerty123'
+];
+
+// Verify email and password
+if ($input['email'] !== $valid_user['email'] || $input['password'] !== $valid_user['password']) {
+     http_response_code(401);
+     echo json_encode(['message' => 'Email or password incorrect']);
+     exit();
+}
+
+// JWT token expiration time: 15 minutes
+$expiration_time = time() + 900;
+
+// Create JWT payload
+$payload = [
+     'email' => $input['email'],
+     'exp' => $expiration_time
+];
+
+// Encode JWT token
+try {
+     $access_token = JWT::encode($payload, $_ENV['ACCESS_TOKEN_SECRET'], 'HS256');
+     echo json_encode([
+          'accessToken' => $access_token,
+          'expiry' => date(DATE_ATOM, $expiration_time)
+     ]);
+} catch (Exception $e) {
+     http_response_code(500);
+     echo json_encode(['message' => 'Failed to generate token', 'error' => $e->getMessage()]);
+}

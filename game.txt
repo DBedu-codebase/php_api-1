@@ -1,0 +1,54 @@
+<?php
+require_once './vendor/autoload.php';
+
+use Firebase\JWT\JWT;
+use Firebase\JWT\Key;
+use Dotenv\Dotenv;
+
+// Load environment variables
+Dotenv::createImmutable(__DIR__)->load();
+
+header('Content-Type: application/json');
+
+// ? static variables checking 
+// // Check for required environment variable
+// if (!isset($_ENV['JWT_SECRET']) || empty($_ENV['JWT_SECRET'])) {
+//      http_response_code(500);
+//      echo json_encode(['message' => 'Server configuration error: Missing JWT_SECRET']);
+//      exit();
+// }
+
+// Check for allowed HTTP methods (only GET allowed)
+if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
+     http_response_code(405);
+     echo json_encode(['message' => 'Method not allowed']);
+     exit();
+}
+
+// Retrieve Authorization header
+$headers = getallheaders();
+if (!isset($headers['Authorization'])) {
+     http_response_code(401);
+     echo json_encode(['message' => 'Authorization header missing']);
+     exit();
+}
+
+list(, $token) = explode(' ', $headers['Authorization'], 2);
+
+try {
+     // Decode the JWT token
+     JWT::decode($token, new Key($_ENV['ACCESS_TOKEN_SECRET'], 'HS256'));
+     // Sample data to return if token is valid
+     $games = [
+          ['title' => 'Dota 2', 'genre' => 'Strategy'],
+          ['title' => 'Ragnarok', 'genre' => 'Role Playing Game']
+     ];
+
+     echo json_encode(['games' => $games]);
+} catch (Exception $e) {
+     http_response_code(401);
+     echo json_encode([
+          'message' => 'Invalid token',
+          'error' => $e->getMessage()
+     ]);
+}
