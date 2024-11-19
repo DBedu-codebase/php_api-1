@@ -2,8 +2,9 @@
 require_once './vendor/autoload.php';
 
 use Dotenv\Dotenv;
-
 use Firebase\JWT\JWT;
+use Firebase\JWT\Key;
+
 
 // Ensure the correct path and argument types
 $dotenv = Dotenv::createImmutable(__DIR__ . '/../../');
@@ -130,36 +131,48 @@ route('/api/v1/blog/:id', function () {
 });
 route('/api/v1/blog', function () use ($pdo) {
      //  ? Get all blog & create a post blog 
-     if ($_SERVER['REQUEST_METHOD'] !== 'POST' || $_SERVER['REQUEST_METHOD'] !== 'GET') {
-          http_response_code(405);
-          echo json_encode(['message' => 'Method not allowed']);
-          exit();
-     } else {
-          try {
-               if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-                    // * for handle blog request
-                    echo json_encode(['message' => 'Get all blog']);
+     // if ($_SERVER['REQUEST_METHOD'] !== 'POST' || $_SERVER['REQUEST_METHOD'] !== 'GET') {
+     //      http_response_code(405);
+     //      echo json_encode(['message' => 'Method not allowed']);
+     //      exit();
+     // } else {
+     try {
+          if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+               // * for handle blog request
+               $headers = getallheaders();
+               if (!isset($headers['Authorization'])) {
+                    http_response_code(401);
+                    echo json_encode(['message' => 'Unauthorized']);
+                    exit();
                }
-               if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-                    global $input;
-                    try {
-                         $sql = "INSERT INTO blog_posts (title, content,category,tags) VALUES (:title,:content,:category,:tags)";
-                         $stmt = $pdo->prepare($sql);
-                         $stmt->execute([
-                              ':title' => $input['title'],
-                              ':content' => $input['content'],
-                              ':category' => $input['category'],
-                              ':tags' => $input['tags'],
-                         ]);
-                         echo json_encode(['message' => 'Blog post created successfully']);
-                    } catch (PDOException $e) {
-                         echo json_encode(['error' => 'Failed to create blog post: ' . $e->getMessage()], JSON_PRETTY_PRINT);
-                    }    # code...
-               }
-          } catch (PDOException $e) {
-               //throw $th;
-               echo json_encode(['error' => 'Failed to create blog post: ' . $e->getMessage()], JSON_PRETTY_PRINT);
+               list(, $token) = explode(' ', $headers['Authorization'], 2);
+               JWT::decode($token, new Key($_ENV['ACCESS_TOKEN_SECRET'], 'HS256'));
+
+               $sql = "SELECT * FROM blog_posts";
+               $stmt = $pdo->prepare($sql);
+               $stmt->execute();
+               $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+               echo json_encode(['blog' => $result]);
           }
+          if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+               global $input;
+               try {
+                    $sql = "INSERT INTO blog_posts (title, content,category,tags) VALUES (:title,:content,:category,:tags)";
+                    $stmt = $pdo->prepare($sql);
+                    $stmt->execute([
+                         ':title' => $input['title'],
+                         ':content' => $input['content'],
+                         ':category' => $input['category'],
+                         ':tags' => $input['tags'],
+                    ]);
+                    echo json_encode(['message' => 'Blog post created successfully']);
+               } catch (PDOException $e) {
+                    echo json_encode(['error' => 'Failed to create blog post: ' . $e->getMessage()], JSON_PRETTY_PRINT);
+               }    # code...
+          }
+     } catch (PDOException $e) {
+          //throw $th;
+          echo json_encode(['error' => 'Failed to create blog post: ' . $e->getMessage()], JSON_PRETTY_PRINT);
      }
 });
 // Define 404 route and run function as previously
