@@ -1,9 +1,15 @@
 <?php
+
+use App\Controllers\blogTestingControllers;
+
+require './src/controllers/testing_controllers.php';
+
+require_once './src/controllers/auth/AuthControllers.php';
+require_once './src/controllers/blog/BlogControllers.php';
 require_once './vendor/autoload.php';
 
+// use src\Controllers\Blog\BlogControllers;
 use Dotenv\Dotenv;
-use Firebase\JWT\JWT;
-use Firebase\JWT\Key;
 
 // Ensure the correct path and argument types
 $dotenv = Dotenv::createImmutable(__DIR__ . '/../../');
@@ -33,41 +39,14 @@ route('/api/v1/auth/login', function () use ($pdo) {
           http_response_code(405);
           echo json_encode(['message' => 'Method not allowed']);
           exit();
-     }
-
-     global $input;
-     if (empty($input['email']) || empty($input['password'])) {
-          http_response_code(400);
-          echo json_encode(['message' => 'Invalid input']);
-          exit();
-     }
-
-     try {
-          $sql = "SELECT * FROM users WHERE email = :email";
-          $stmt = $pdo->prepare($sql);
-          $stmt->execute([':email' => $input['email']]);
-          $user = $stmt->fetch(PDO::FETCH_ASSOC);
-
-          if (!$user || !password_verify($input['password'], $user['password'])) {
-               http_response_code(401);
-               echo json_encode(['message' => 'Email or password incorrect']);
-               exit();
+     } else {
+          try {
+               $controller = new AuthUsersControllers();
+               $controller->login($pdo);
+          } catch (Exception $e) {
+               http_response_code(500);
+               echo json_encode(['error' => $e->getMessage()]);
           }
-
-          $expiration_time = time() + 900;
-          $payload = [
-               'email' => $user['email'],
-               'exp' => $expiration_time
-          ];
-
-          $access_token = JWT::encode($payload, $_ENV['ACCESS_TOKEN_SECRET'], 'HS256');
-          echo json_encode([
-               'access_token' => $access_token,
-               'expiry' => date(DATE_ATOM, $expiration_time)
-          ]);
-     } catch (Exception $e) {
-          http_response_code(500);
-          echo json_encode(['message' => 'Failed to generate token', 'error' => $e->getMessage()]);
      }
 });
 
@@ -78,25 +57,11 @@ route('/api/v1/auth/register', function () use ($pdo) {
           exit();
      } else {
           try {
-               global $input;
-               if (empty($input['email']) || empty($input['name']) || empty($input['password'])) {
-                    http_response_code(400);
-                    echo json_encode(['message' => 'Invalid input']);
-                    exit();
-               }
-
-               $password = password_hash($input['password'], PASSWORD_DEFAULT);
-
-               $sql = "INSERT INTO users (email,name,password) VALUES (:email,:name,:password)";
-               $stmt = $pdo->prepare($sql);
-               $stmt->execute([
-                    ':email' => $input['email'],
-                    ':name' => $input['name'],
-                    ':password' => $password,
-               ]);
-               echo json_encode(['message' => 'User created successfully']);
-          } catch (PDOException $e) {
-               echo json_encode(['error' => 'Failed to create blog post: ' . $e->getMessage()], JSON_PRETTY_PRINT);
+               $controller = new AuthUsersControllers();
+               $controller->register($pdo);
+          } catch (Exception $e) {
+               http_response_code(500);
+               echo json_encode(['error' => $e->getMessage()]);
           }
      }
 });
@@ -105,99 +70,32 @@ route('/api/v1/auth/register', function () use ($pdo) {
 route('/api/v1/blog/:id', function ($id) use ($pdo) {
      // Get details of blog, delete or update blog based on the provided id
      if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-          // Handle GET request for all blogs
-          $headers = getallheaders();
-          if (!isset($headers['Authorization'])) {
-               http_response_code(401);
-               echo json_encode(['message' => 'Unauthorized']);
-               exit();
+          try {
+               $controller = new BlogControllers();
+               $controller->getDetailsBlog($pdo, $id);
+          } catch (Exception $e) {
+               http_response_code(500);
+               echo json_encode(['error' => $e->getMessage()]);
           }
-          list(, $token) = explode(' ', $headers['Authorization'], 2);
-          JWT::decode($token, new Key($_ENV['ACCESS_TOKEN_SECRET'], 'HS256'));
-
-          $sql = "SELECT * FROM blog_posts WHERE id = :id";
-          $stmt = $pdo->prepare($sql);
-          $stmt->bindParam(':id', $id);
-          $stmt->execute();
-          $result = $stmt->fetch(PDO::FETCH_ASSOC);
-          echo $result ? json_encode(['message' => $result]) : json_encode(['message' => 'Blog not found']);
           // echo json_encode(['Get blogs based on id' => $result]);
      }
      if ($_SERVER['REQUEST_METHOD'] === 'DELETE') {
           // Handle GET request for all blogs
-          $headers = getallheaders();
-          if (!isset($headers['Authorization'])) {
-               http_response_code(401);
-               echo json_encode(['message' => 'Unauthorized']);
-               exit();
+          try {
+               $controller = new BlogControllers();
+               $controller->deleteBlogId($pdo, $id);
+          } catch (Exception $e) {
+               http_response_code(500);
+               echo json_encode(['error' => $e->getMessage()]);
           }
-          list(, $token) = explode(' ', $headers['Authorization'], 2);
-          JWT::decode($token, new Key($_ENV['ACCESS_TOKEN_SECRET'], 'HS256'));
-          $sql = "DELETE FROM blog_posts WHERE id = :id";
-          $stmt = $pdo->prepare($sql);
-          $stmt->bindParam(':id', $id);
-          $stmt->execute();
-          echo $stmt->rowCount() > 0 ? json_encode(['message' => 'Blog post deleted successfully']) : json_encode(['message' => 'Blog post could not be deleted']);
      }
      if ($_SERVER['REQUEST_METHOD'] === 'PUT') {
-          // Handle PUT request for updating blog
-          $headers = getallheaders();
-
-          // Check if Authorization header is set
-          if (!isset($headers['Authorization'])) {
-               http_response_code(401);
-               echo json_encode(['message' => 'Unauthorized']);
-               exit();
-          }
-
-          // Get the token from the Authorization header
-          list(, $token) = explode(' ', $headers['Authorization'], 2);
-
           try {
-               // Decode the token (make sure the JWT class is included)
-               JWT::decode($token, new Key($_ENV['ACCESS_TOKEN_SECRET'], 'HS256'));
+               $controller = new blogControllers();
+               $controller->putDetailsBlog($pdo, $id);
           } catch (Exception $e) {
-               http_response_code(401);
-               echo json_encode(['message' => 'Unauthorized']);
-               exit();
-          }
-
-          // Parse the incoming JSON data (from PUT request body)
-          $input = json_decode(file_get_contents('php://input'), true);
-
-          // Validate required fields in the input
-          if (empty($input['title']) || empty($input['category']) || empty($input['tags']) || empty($input['content'])) {
-               http_response_code(400);
-               echo json_encode(['message' => 'Invalid input']);
-               exit();
-          }
-
-          // Retrieve the blog post ID (it could come from the URL)
-          if (!isset($id)) {
-               http_response_code(400);
-               echo json_encode(['message' => 'Blog post ID is required']);
-               exit();
-          }
-
-          // $id = $input['id'];
-
-          // Prepare the SQL update query
-          $sql = "UPDATE blog_posts SET title = :title, content = :content, category = :category, tags = :tags WHERE id = :id";
-          $stmt = $pdo->prepare($sql);
-
-          // Bind parameters and execute the query
-          $stmt->bindParam(':id', $id);
-          $stmt->bindParam(':title', $input['title']);
-          $stmt->bindParam(':content', $input['content']);
-          $stmt->bindParam(':category', $input['category']);
-          $stmt->bindParam(':tags', $input['tags']);
-          $stmt->execute();
-
-          // Return response based on the result of the update
-          if ($stmt->rowCount() > 0) {
-               echo json_encode(['message' => 'Blog post updated successfully']);
-          } else {
-               echo json_encode(['message' => 'Blog post could not be updated']);
+               http_response_code(500);
+               echo json_encode(['error' => $e->getMessage()]);
           }
      }
 });
@@ -205,41 +103,42 @@ route('/api/v1/blog/:id', function ($id) use ($pdo) {
 route('/api/v1/blog', function () use ($pdo) {
      if ($_SERVER['REQUEST_METHOD'] === 'GET') {
           // Handle GET request for all blogs
-          $headers = getallheaders();
-          if (!isset($headers['Authorization'])) {
-               http_response_code(401);
-               echo json_encode(['message' => 'Unauthorized']);
-               exit();
+          try {
+               $controller = new blogControllers();
+               $controller->getAllBlog($pdo);
+          } catch (Exception $e) {
+               http_response_code(500);
+               echo json_encode(['error' => $e->getMessage()]);
           }
-          list(, $token) = explode(' ', $headers['Authorization'], 2);
-          JWT::decode($token, new Key($_ENV['ACCESS_TOKEN_SECRET'], 'HS256'));
-
-          $sql = "SELECT * FROM blog_posts";
-          $stmt = $pdo->prepare($sql);
-          $stmt->execute();
-          $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
-          echo json_encode(['blog' => $result]);
      }
 
      if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-          global $input;
+          // Handle POST request for creating a new blog
           try {
-               $sql = "INSERT INTO blog_posts (title, content, category, tags) VALUES (:title, :content, :category, :tags)";
-               $stmt = $pdo->prepare($sql);
-               $stmt->execute([
-                    ':title' => $input['title'],
-                    ':content' => $input['content'],
-                    ':category' => $input['category'],
-                    ':tags' => $input['tags'],
-               ]);
-               echo json_encode(['message' => 'Blog post created successfully']);
-          } catch (PDOException $e) {
-               echo json_encode(['error' => 'Failed to create blog post: ' . $e->getMessage()], JSON_PRETTY_PRINT);
+               $controller = new blogControllers();
+               $controller->postBlog($pdo);
+          } catch (Exception $e) {
+               http_response_code(500);
+               echo json_encode(['error' => $e->getMessage()]);
           }
      }
 });
 
 // Define 404 route and run function as previously
+route('/test', function () {
+     if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+          try {
+               $controller = new blogTestingControllers();
+               $controller->getBlog('test cuy');
+          } catch (Exception $e) {
+               http_response_code(500);
+               echo json_encode(['error' => $e->getMessage()]);
+          }
+     } else {
+          http_response_code(405);
+          echo json_encode(['message' => 'Method not allowed']);
+     }
+});
 route('/404', function () {
      echo json_encode(['error' => 'Page Not Found'], JSON_PRETTY_PRINT);
 });
