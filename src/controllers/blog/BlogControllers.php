@@ -1,8 +1,8 @@
 <?php
 
+require_once  './src/middleware/auth.php';
+
 use Dotenv\Dotenv;
-use Firebase\JWT\JWT;
-use Firebase\JWT\Key;
 // Ensure the correct path and argument types
 $dotenv = Dotenv::createImmutable(__DIR__ . '/../../../');
 $dotenv->load();
@@ -11,14 +11,9 @@ class BlogControllers
 {
      public function getAllBlog($pdo)
      {
-          $headers = getallheaders();
-          if (!isset($headers['Authorization'])) {
-               http_response_code(401);
-               echo json_encode(['message' => 'Unauthorized']);
-               exit();
-          }
-          list(, $token) = explode(' ', $headers['Authorization'], 2);
-          JWT::decode($token, new Key($_ENV['ACCESS_TOKEN_SECRET'], 'HS256'));
+          // * AuthMiddleware verification
+          $middleware = new AuthMiddleware();
+          $middleware->AuthVerify();
 
           $sql = "SELECT * FROM blog_posts";
           $stmt = $pdo->prepare($sql);
@@ -28,6 +23,10 @@ class BlogControllers
      }
      public function postBlog($pdo)
      {
+          // * AuthMiddleware verification
+          $middleware = new AuthMiddleware();
+          $middleware->AuthVerify();
+
           global $input;
           if (empty($input['title']) || empty($input['content']) || empty($input['category']) || empty($input['tags'])) {
                http_response_code(400);
@@ -50,15 +49,9 @@ class BlogControllers
      }
      public function getDetailsBlog($pdo, $id)
      {
-          // Handle GET request for all blogs
-          $headers = getallheaders();
-          if (!isset($headers['Authorization'])) {
-               http_response_code(401);
-               echo json_encode(['message' => 'Unauthorized']);
-               exit();
-          }
-          list(, $token) = explode(' ', $headers['Authorization'], 2);
-          JWT::decode($token, new Key($_ENV['ACCESS_TOKEN_SECRET'], 'HS256'));
+          // * AuthMiddleware verification
+          $middleware = new AuthMiddleware();
+          $middleware->AuthVerify();
 
           $sql = "SELECT * FROM blog_posts WHERE id = :id";
           $stmt = $pdo->prepare($sql);
@@ -69,27 +62,9 @@ class BlogControllers
      }
      public function putDetailsBlog($pdo, $id)
      {
-          // Handle PUT request for updating blog
-          $headers = getallheaders();
-
-          // Check if Authorization header is set
-          if (!isset($headers['Authorization'])) {
-               http_response_code(401);
-               echo json_encode(['message' => 'Unauthorized']);
-               exit();
-          }
-
-          // Get the token from the Authorization header
-          list(, $token) = explode(' ', $headers['Authorization'], 2);
-
-          try {
-               // Decode the token (make sure the JWT class is included)
-               JWT::decode($token, new Key($_ENV['ACCESS_TOKEN_SECRET'], 'HS256'));
-          } catch (Exception $e) {
-               http_response_code(401);
-               echo json_encode(['message' => 'Unauthorized']);
-               exit();
-          }
+          // * AuthMiddleware verification
+          $middleware = new AuthMiddleware();
+          $middleware->AuthVerify();
 
           // Parse the incoming JSON data (from PUT request body)
           $input = json_decode(file_get_contents('php://input'), true);
@@ -131,14 +106,18 @@ class BlogControllers
      }
      public function deleteBlogId($pdo, $id)
      {
-          $headers = getallheaders();
-          if (!isset($headers['Authorization'])) {
-               http_response_code(401);
-               echo json_encode(['message' => 'Unauthorized']);
-               exit();
-          }
-          list(, $token) = explode(' ', $headers['Authorization'], 2);
-          JWT::decode($token, new Key($_ENV['ACCESS_TOKEN_SECRET'], 'HS256'));
+          // $headers = getallheaders();
+          // if (!isset($headers['Authorization'])) {
+          //      http_response_code(401);
+          //      echo json_encode(['message' => 'Unauthorized']);
+          //      exit();
+          // }
+          // list(, $token) = explode(' ', $headers['Authorization'], 2);
+          // JWT::decode($token, new Key($_ENV['ACCESS_TOKEN_SECRET'], 'HS256'));
+          // * AuthMiddleware verification
+          $middleware = new AuthMiddleware();
+          $middleware->AuthVerify();
+
           $sql = "DELETE FROM blog_posts WHERE id = :id";
           $stmt = $pdo->prepare($sql);
           $stmt->bindParam(':id', $id);

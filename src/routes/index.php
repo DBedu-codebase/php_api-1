@@ -3,14 +3,13 @@
 use App\Controllers\blogTestingControllers;
 
 require './src/controllers/testing_controllers.php';
+
 require_once './src/controllers/auth/AuthControllers.php';
 require_once './src/controllers/blog/BlogControllers.php';
 require_once './vendor/autoload.php';
 
 // use src\Controllers\Blog\BlogControllers;
 use Dotenv\Dotenv;
-use Firebase\JWT\JWT;
-use Firebase\JWT\Key;
 
 // Ensure the correct path and argument types
 $dotenv = Dotenv::createImmutable(__DIR__ . '/../../');
@@ -49,14 +48,6 @@ route('/api/v1/auth/login', function () use ($pdo) {
                echo json_encode(['error' => $e->getMessage()]);
           }
      }
-
-     // global $input;
-     // if (empty($input['email']) || empty($input['password'])) {
-     //      http_response_code(400);
-     //      echo json_encode(['message' => 'Invalid input']);
-     //      exit();
-     // }
-
 });
 
 route('/api/v1/auth/register', function () use ($pdo) {
@@ -72,28 +63,6 @@ route('/api/v1/auth/register', function () use ($pdo) {
                http_response_code(500);
                echo json_encode(['error' => $e->getMessage()]);
           }
-
-          // try {
-          //      global $input;
-          //      if (empty($input['email']) || empty($input['name']) || empty($input['password'])) {
-          //           http_response_code(400);
-          //           echo json_encode(['message' => 'Invalid input']);
-          //           exit();
-          //      }
-
-          //      $password = password_hash($input['password'], PASSWORD_DEFAULT);
-
-          //      $sql = "INSERT INTO users (email,name,password) VALUES (:email,:name,:password)";
-          //      $stmt = $pdo->prepare($sql);
-          //      $stmt->execute([
-          //           ':email' => $input['email'],
-          //           ':name' => $input['name'],
-          //           ':password' => $password,
-          //      ]);
-          //      echo json_encode(['message' => 'User created successfully']);
-          // } catch (PDOException $e) {
-          //      echo json_encode(['error' => 'Failed to create blog post: ' . $e->getMessage()], JSON_PRETTY_PRINT);
-          // }
      }
 });
 
@@ -170,21 +139,6 @@ route('/test', function () {
           echo json_encode(['message' => 'Method not allowed']);
      }
 });
-// route('/auth', function () {
-//      if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-//           try {
-//                $controller = new AuthUsersControllers();
-//                $controller->login('test login cuy');
-//           } catch (Exception $e) {
-//                http_response_code(500);
-//                echo json_encode(['error' => $e->getMessage()]);
-//           }
-//      } else {
-//           http_response_code(405);
-//           echo json_encode(['message' => 'Method not allowed']);
-//      }
-// });
-
 route('/404', function () {
      echo json_encode(['error' => 'Page Not Found'], JSON_PRETTY_PRINT);
 });
