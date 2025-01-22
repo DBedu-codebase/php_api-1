@@ -1,11 +1,40 @@
 <?php
-$host = "localhost:3306";
-$user = "root";
-$password = "satelkermel123";
-$dbname = "blog_api";
-try {
-     $pdo = new PDO("mysql:host=$host;dbname=$dbname", $user, $password);
-     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-} catch (PDOException $e) {
-     die("Connection failed: " . $e->getMessage());
+
+namespace App\Model;
+
+require 'vendor/autoload.php';
+
+use PDO;
+use PDOException;
+
+class Database
+{
+     private $host;
+     private $user;
+     private $password;
+     private $dbname;
+     private $pdo;
+
+     public function __construct()
+     {
+          $dotenv = \DotenvVault\DotenvVault::createImmutable(__DIR__);
+          $dotenv->safeLoad();
+
+          $this->host = "localhost:3306";
+          $this->user = "root";
+          $this->password = "satelkermel123";
+          $this->dbname = "blog_api";
+
+          try {
+               $this->pdo = new PDO("mysql:host=$this->host;dbname=$this->dbname", $this->user, $this->password);
+               $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+          } catch (PDOException $e) {
+               die("Connection failed: " . $e->getMessage());
+          }
+     }
+
+     public function getPdo()
+     {
+          return $this->pdo;
+     }
 }

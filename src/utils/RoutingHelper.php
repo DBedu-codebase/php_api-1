@@ -1,33 +1,72 @@
 <?php
-require_once __DIR__ . '/../routes/index.php';
 
-function routeMethod($path, $method, $callback)
+namespace App\Http;
+
+class Router
 {
-     route($path, function () use ($method, $callback) {
-          if ($_SERVER['REQUEST_METHOD'] === $method) {
-               echo $callback();
-               return;
+     private $routes = [];
+
+     public function get($path, $callback)
+     {
+          $this->addRoute('GET', $path, $callback);
+     }
+
+     public function post($path, $callback)
+     {
+          $this->addRoute('POST', $path, $callback);
+     }
+
+     public function put($path, $callback)
+     {
+          $this->addRoute('PUT', $path, $callback);
+     }
+
+     public function delete($path, $callback)
+     {
+          $this->addRoute('DELETE', $path, $callback);
+     }
+
+     private function addRoute($method, $path, $callback)
+     {
+          $this->routes[] = [
+               'method' => $method,
+               'path' => $path,
+               'callback' => $callback,
+          ];
+     }
+
+     public function run()
+     {
+          $requestMethod = $_SERVER['REQUEST_METHOD'];
+          $requestUri = strtok($_SERVER['REQUEST_URI'], '?'); // Strip query parameters
+
+          foreach ($this->routes as $route) {
+               if ($requestMethod === $route['method'] && $this->match($route['path'], $requestUri, $params)) {
+                    if (is_callable($route['callback'])) {
+                         call_user_func_array($route['callback'], $params);
+                    } else {
+                         call_user_func([$route['callback'][0], $route['callback'][1]], ...$params);
+                    }
+                    return;
+               }
           }
 
-          // Set HTTP response code to 405 and exit if method does not match
-          http_response_code(405);
-          echo json_encode(['error' => 'Method Not Allowed']);
+          http_response_code(404);
+          echo json_encode(['error' => 'Route not found']);
           exit;
-     });
+     }
+
+     private function match($routePath, $requestUri, &$params)
+     {
+          $routeRegex = preg_replace('#:([\w]+)#', '([\w-]+)', $routePath);
+          $routeRegex = '#^' . $routeRegex . '$#';
+
+          if (preg_match($routeRegex, $requestUri, $matches)) {
+               array_shift($matches); // Remove full match
+               $params = $matches;
+               return true;
+          }
+
+          return false;
+     }
 }
-function getRoute($path, $callback)
-{
-     routeMethod($path, 'GET', $callback);
-};
-function postRoute($path, $callback)
-{
-     routeMethod($path, 'POST', $callback);
-};
-function putRoute($path, $callback)
-{
-     routeMethod($path, 'PUT', $callback);
-};
-function deleteRoute($path, $callback)
-{
-     routeMethod($path, 'DELETE', $callback);
-};

@@ -1,24 +1,16 @@
--- Active: 1730795955014@@localhost@3306
--- Create the database
-CREATE DATABASE blog;
+CREATE TABLE user (
+    user_id INT NOT NULL PRIMARY KEY AUTO_INCREMENT COMMENT 'Primary Key',
+    username VARCHAR(255) NOT NULL UNIQUE COMMENT 'Username',
+    email VARCHAR(255) NOT NULL UNIQUE COMMENT 'Email Address',
+    password_hash VARCHAR(255) NOT NULL COMMENT 'Password Hash',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT 'Creation Time'
+) COMMENT='Table to store user information';
 
--- Use the blog database
-USE blog;
-
--- Create the blog_posts table
-CREATE TABLE blog_posts (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    title VARCHAR(255) NOT NULL,
-    content TEXT NOT NULL,
-    category VARCHAR(100),
-    tags VARCHAR(255),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-);
-
-CREATE TABLE users (
-    id INT(11) AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(200) NOT NULL,
-    email VARCHAR(200) NOT NULL,
-    password VARCHAR(255) NOT NULL
-);
+CREATE TABLE blog (
+    post_id INT NOT NULL PRIMARY KEY AUTO_INCREMENT COMMENT 'Primary Key',
+    title VARCHAR(255) NOT NULL COMMENT 'Post Title',
+    content TEXT NOT NULL COMMENT 'Post Content',
+    author_id INT NOT NULL COMMENT 'Foreign Key to Users Table',
+    published_at DATETIME COMMENT 'Publication Time',
+    FOREIGN KEY (author_id) REFERENCES user(user_id) ON DELETE CASCADE
+) COMMENT='Table to store blog posts with reference to authors';

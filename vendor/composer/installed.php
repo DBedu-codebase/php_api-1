@@ -3,13 +3,22 @@
         'name' => 'php_basic/php_api',
         'pretty_version' => 'dev-main',
         'version' => 'dev-main',
-        'reference' => 'ca731b1f85e39208ddfe4998d4c441eb87932b70',
+        'reference' => '0c679d9f2c2be4960116fc2e548160cbd9f51d84',
         'type' => 'library',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
         'dev' => true,
     ),
     'versions' => array(
+        'dotenv-org/phpdotenv-vault' => array(
+            'pretty_version' => 'v0.2.4',
+            'version' => '0.2.4.0',
+            'reference' => '5fca3eb6c6a0e9bd320a72781c6a6f9342ab5cd4',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../dotenv-org/phpdotenv-vault',
+            'aliases' => array(),
+            'dev_requirement' => false,
+        ),
         'firebase/php-jwt' => array(
             'pretty_version' => 'v6.10.1',
             'version' => '6.10.1.0',
@@ -31,7 +40,7 @@
         'php_basic/php_api' => array(
             'pretty_version' => 'dev-main',
             'version' => 'dev-main',
-            'reference' => 'ca731b1f85e39208ddfe4998d4c441eb87932b70',
+            'reference' => '0c679d9f2c2be4960116fc2e548160cbd9f51d84',
             'type' => 'library',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

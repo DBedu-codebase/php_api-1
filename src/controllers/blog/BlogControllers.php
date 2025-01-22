@@ -1,48 +1,48 @@
 <?php
-$input = json_decode(file_get_contents('php://input'), true);
-function Get_All_Blog($pdo)
+
+namespace App\Controllers;
+
+use App\Model\Database;
+
+class BlogControllers
 {
-     try {
-          // $sql = "SELECT * FROM blog_posts";
-          // $stmt = $pdo->prepare($sql);
-          // $stmt->execute();
-          // $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
-          echo json_encode("Testing");
-     } catch (PDOException $e) {
-          echo json_encode(['error' => 'Database error: ' . $e->getMessage()], JSON_PRETTY_PRINT);
-     }
-}
-function Post_Blog($pdo)
-{
-     global $input;
-     try {
-          $sql = "INSERT INTO blog_posts (title, content,category,tags) VALUES (:title,:content,:category,:tags)";
+     public static function getAll($pdo)
+     {
+          $sql = "SELECT * FROM blog";
           $stmt = $pdo->prepare($sql);
-          $stmt->execute([
-               ':title' => $input['title'],
-               ':content' => $input['content'],
-               ':category' => $input['category'],
-               ':tags' => $input['tags'],
+          $stmt->execute();
+          $result = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+          echo json_encode([
+               'message' => "Successfully Get All Blog",
+               'data' => [
+                    'blog' => $result
+               ]
           ]);
-          echo json_encode(['message' => 'Blog post created successfully']);
-     } catch (PDOException $e) {
-          echo json_encode(['error' => 'Failed to create blog post: ' . $e->getMessage()], JSON_PRETTY_PRINT);
+     }
+
+     public static function getBlogById($pdo, $id)
+     {
+          $sql = "SELECT * FROM blog WHERE id = :id";
+          $stmt = $pdo->prepare($sql);
+          $stmt->execute([':id' => $id]);
+          $result = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+          echo json_encode([
+               'message' => "Successfully Get Blog Based Id",
+               'data' => [
+                    'blog' => $result
+               ]
+          ]);
+     }
+     public static function delete($pdo, $id)
+     {
+          $sql = "DELETE FROM blog WHERE id = :id";
+          $stmt = $pdo->prepare($sql);
+          $stmt->execute([':id' => $id]);
+          echo json_encode([
+               'message' => 'Deleted successfully',
+               'data' => [
+                    'blog' => $stmt
+               ]
+          ]);
      }
 }
-function greet()
-{
-     echo "hello";
-}
-// function Get_Single_Blog($id)
-// {
-//      try {
-//           $sql = "SELECT * FROM blog_posts WHERE id = :id";
-//           $stmt = $pdo->prepare($sql);
-//           $stmt->bindParam(':id', $id);
-//           $stmt->execute();
-//           $result = $stmt->fetch(PDO::FETCH_ASSOC);
-//           echo json_encode($result);
-//      } catch (PDOException $e) {
-//           echo json_encode(['error' => 'Database error: ' . $e->getMessage()], JSON_PRETTY_PRINT);
-//      }
-// }
