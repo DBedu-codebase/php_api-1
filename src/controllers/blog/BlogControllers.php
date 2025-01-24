@@ -2,12 +2,17 @@
 
 namespace App\Controllers;
 
-use App\Model\Database;
+require_once './vendor/autoload.php';
 
+use App\Middleware\AuthMiddleware;
+
+require_once './src/middleware/auth.php';
 class BlogControllers
 {
      public static function getAll($pdo)
      {
+          $auth = new AuthMiddleware();
+          $auth->authenticate();
           $sql = "SELECT * FROM blog";
           $stmt = $pdo->prepare($sql);
           $stmt->execute();
@@ -22,10 +27,12 @@ class BlogControllers
 
      public static function getBlogById($pdo, $id)
      {
+          $auth = new AuthMiddleware();
+          $auth->authenticate();
           $sql = "SELECT * FROM blog WHERE post_id = :id";
           $stmt = $pdo->prepare($sql);
           $stmt->execute([':id' => $id]);
-          $result = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+          $result = $stmt->fetch(\PDO::FETCH_ASSOC);
 
           if (empty($result)) {
                http_response_code(404);
@@ -44,6 +51,8 @@ class BlogControllers
      }
      public static function delete($pdo, $id)
      {
+          $auth = new AuthMiddleware();
+          $auth->authenticate();
           // Validate the ID
           if (empty($id) || !is_numeric($id)) {
                http_response_code(400);

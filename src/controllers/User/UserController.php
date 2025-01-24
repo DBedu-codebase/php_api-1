@@ -6,6 +6,12 @@ require_once './vendor/autoload.php';
 
 
 use PDOException;
+use Exception;
+use Firebase\JWT\JWT;
+use DotenvVault\DotenvVault;
+
+$dotenv = DotenvVault::createImmutable(dirname(__DIR__, 3)); // Go up 3 levels to the project root
+$dotenv->safeLoad();
 
 class UserControllers
 {
@@ -52,6 +58,61 @@ class UserControllers
           } catch (PDOException $e) {
                //throw $th;
                echo json_encode(['error' => 'Failed to create blog post: ' . $e->getMessage()], JSON_PRETTY_PRINT);
+          }
+     }
+     public static function login($pdo)
+     {
+          try {
+               global $input;
+               // * validation simple input
+               if (empty($input['email']) || empty($input['password_hash'])) {
+                    http_response_code(400);
+                    echo json_encode(['message' => 'Invalid input']);
+                    exit();
+               }
+               // * check email and password from db
+               $sql = "SELECT * FROM user WHERE email = :email";
+               $stmt = $pdo->prepare($sql);
+               $stmt->execute([
+                    ':email' => $input['email'],
+               ]);
+               $result = $stmt->fetch(\PDO::FETCH_ASSOC);
+               if (!$result) {
+                    http_response_code(401);
+                    echo json_encode(['message' => 'Email or password incorrect']);
+                    exit();
+               }
+               // * validate password with hash password from db
+               if (!password_verify($input['password_hash'], $result['password_hash'])) {
+                    http_response_code(401);
+                    echo json_encode(['message' => 'Email or password incorrect']);
+                    exit();
+               }
+               // * generate jwt token
+               $expiration_time = time() + 900;
+               $payload = [
+                    'email' => $result['email'],
+                    'exp' => $expiration_time
+               ];
+
+               if (!$_SERVER['ACCESS_TOKEN_SECRET']) {
+                    http_response_code(500);
+                    echo json_encode(['message' => 'Failed to generate token', 'error' => 'ACCESS_TOKEN_SECRET is not set']);
+                    exit();
+               }
+
+               $access_token = JWT::encode($payload, $_SERVER['ACCESS_TOKEN_SECRET'], 'HS256');
+
+               echo json_encode([
+                    'message' => 'Login successfully',
+                    'data' => [
+                         'access_token' => $access_token,
+                         'expiry' => date(DATE_ATOM, $expiration_time)
+                    ]
+               ]);
+          } catch (Exception $e) {
+               http_response_code(500);
+               echo json_encode(['message' => 'Failed to generate token', 'error' => $e->getMessage()]);
           }
      }
 }
