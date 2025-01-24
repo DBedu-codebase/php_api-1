@@ -2,25 +2,32 @@
 
 namespace App\Controllers\User;
 
-
+use Dotenv\Validator;
 use PDOException;
 use Exception;
 use Firebase\JWT\JWT;
 use DotenvVault\DotenvVault;
+use App\Core\Validation;
 
 $dotenv = DotenvVault::createImmutable(dirname(__DIR__, 3)); // Go up 3 levels to the project root
 $dotenv->safeLoad();
 
-class User
+class User extends Validation
 {
-     public static function register($pdo)
+     public  function register($pdo)
      {
           try {
-               global $input;
+               $input = json_decode(file_get_contents('php://input'), true);
+               header("Content-Type: application/json");
                // * validation simple input
-               if (empty($input['email']) || empty($input['username']) || empty($input['password_hash'])) {
+               $this->addRule('email', 'email|required');
+               $this->addRule('username', 'string|required|min:3|max:50');
+               $this->addRule('password_hash', 'password|required|min:8|max:255');
+
+               $errors = $this->validate($input);
+               if (!empty($errors)) {
                     http_response_code(400);
-                    echo json_encode(['message' => 'Invalid input']);
+                    echo json_encode(['errors' => $errors]);
                     exit();
                }
                // * check email and username must be unique
@@ -58,7 +65,7 @@ class User
                echo json_encode(['error' => 'Failed to create blog post: ' . $e->getMessage()], JSON_PRETTY_PRINT);
           }
      }
-     public static function login($pdo)
+     public  function login($pdo)
      {
           try {
                global $input;
