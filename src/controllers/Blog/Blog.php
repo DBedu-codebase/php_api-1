@@ -1,13 +1,11 @@
 <?php
 
-namespace App\Controllers;
-
-require_once './vendor/autoload.php';
+namespace App\Controllers\Blog;
 
 use App\Middleware\AuthMiddleware;
 
-require_once './src/middleware/auth.php';
-class BlogControllers
+
+class Blog
 {
      public static function getAll($pdo)
      {

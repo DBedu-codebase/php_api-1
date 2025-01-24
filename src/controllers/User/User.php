@@ -1,8 +1,6 @@
 <?php
 
-namespace App\Controllers;
-
-require_once './vendor/autoload.php';
+namespace App\Controllers\User;
 
 
 use PDOException;
@@ -13,7 +11,7 @@ use DotenvVault\DotenvVault;
 $dotenv = DotenvVault::createImmutable(dirname(__DIR__, 3)); // Go up 3 levels to the project root
 $dotenv->safeLoad();
 
-class UserControllers
+class User
 {
      public static function register($pdo)
      {
