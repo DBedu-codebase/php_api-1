@@ -8,6 +8,7 @@ use Exception;
 use Firebase\JWT\JWT;
 use DotenvVault\DotenvVault;
 use App\Core\Validation;
+use App\Model\UserModel;
 
 $dotenv = DotenvVault::createImmutable(dirname(__DIR__, 3)); // Go up 3 levels to the project root
 $dotenv->safeLoad();
@@ -17,6 +18,7 @@ class User extends Validation
      public  function register($pdo)
      {
           try {
+               $user = new UserModel();
                $input = json_decode(file_get_contents('php://input'), true);
                header("Content-Type: application/json");
                // * validation simple input
@@ -31,13 +33,7 @@ class User extends Validation
                     exit();
                }
                // * check email and username must be unique
-               $sql = "SELECT email,username FROM user WHERE email = :email OR username = :username";
-               $stmt = $pdo->prepare($sql);
-               $stmt->execute([
-                    ':email' => $input['email'],
-                    ':username' => $input['username'],
-               ]);
-               $result = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+               $result = $user->getUniqueUser($input['email'], $input['username']);
                if (!empty($result)) {
                     http_response_code(400);
                     echo json_encode(['message' => 'Email or username already exists']);
@@ -45,21 +41,7 @@ class User extends Validation
                }
                // * create hash password
                $password = password_hash($input['password_hash'], PASSWORD_DEFAULT);
-
-               $sql = "INSERT INTO user (email,username,password_hash) VALUES (:email,:username,:password_hash)";
-               $stmt = $pdo->prepare($sql);
-               $stmt->execute([
-                    ':email' => $input['email'],
-                    ':username' => $input['username'],
-                    ':password_hash' => $password,
-               ]);
-               unset($input['password_hash']);
-               echo json_encode([
-                    'message' => 'User created successfully',
-                    'data' => [
-                         'user' => $input
-                    ]
-               ]);
+               echo $user->PostUniqueUser($input['email'], $input['username'], $password);
           } catch (PDOException $e) {
                //throw $th;
                echo json_encode(['error' => 'Failed to create blog post: ' . $e->getMessage()], JSON_PRETTY_PRINT);
@@ -68,7 +50,9 @@ class User extends Validation
      public  function login($pdo)
      {
           try {
-               global $input;
+               $user = new UserModel();
+               $input = json_decode(file_get_contents('php://input'), true);
+               header("Content-Type: application/json");
                // * validation simple input
                if (empty($input['email']) || empty($input['password_hash'])) {
                     http_response_code(400);
@@ -76,12 +60,8 @@ class User extends Validation
                     exit();
                }
                // * check email and password from db
-               $sql = "SELECT * FROM user WHERE email = :email";
-               $stmt = $pdo->prepare($sql);
-               $stmt->execute([
-                    ':email' => $input['email'],
-               ]);
-               $result = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+               $result = $user->getUniqueUserEmail($input['email']);
                if (!$result) {
                     http_response_code(401);
                     echo json_encode(['message' => 'Email or password incorrect']);
