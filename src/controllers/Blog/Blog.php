@@ -3,27 +3,38 @@
 namespace App\Controllers\Blog;
 
 use App\Core\Validation;
-use App\Middleware\AuthMiddleware;
+use App\Middleware\Auth;
 use App\Model\BlogModel;
+use PDOException;
 
-class Blog
+class Blog extends Validation
 {
-     public function getAll($pdo)
+     private Auth $auth;
+     private BlogModel $blogModel;
+
+     public function __construct()
      {
-          $model =  new BlogModel();
-          $model->getAll();
+          $this->auth = new Auth();
+          $this->blogModel = new BlogModel();
+     }
+
+     // * GET
+     public function getAll()
+     {
+          $this->auth->authenticate();
+          $result = $this->blogModel->getAll();
           echo json_encode([
                'message' => "Successfully Get All Blog",
                'data' => [
-                    'blog' => $model
+                    'blog' => $result,
+                    'payload' => $this->auth->authenticate()
                ]
           ]);
      }
 
-     public  function getBlogById($pdo, $id)
+     public function getBlogById($id)
      {
-          $model =  new BlogModel();
-          $result = $model->getById($id);
+          $result = $this->blogModel->getById($id);
           if (empty($result)) {
                http_response_code(404);
                echo json_encode([
@@ -39,19 +50,99 @@ class Blog
                ]
           ]);
      }
-     public static function delete($pdo, $id)
+
+     // * POST
+     public function create()
      {
-          $model =  new BlogModel();
-          $result =  $model->getById($id);
-          if (empty($result)) {
-               http_response_code(404);
+          try {
+               $this->auth->authenticate();
+               $input = json_decode(file_get_contents('php://input'), true);
+               header("Content-Type: application/json");
+               // * validation simple input
+               $this->addRule('title', 'string|required|min:3|max:50');
+               $this->addRule('content', 'string|required|min:3|max:255');
+
+               $errors = $this->validate($input);
+               if (!empty($errors)) {
+                    http_response_code(400);
+                    echo json_encode(['errors' => $errors]);
+                    exit();
+               }
+               // * create blog post
+               $result = $this->blogModel->create($input, $this->auth->authenticate());
                echo json_encode([
-                    'error' => 'Blog not found',
+                    'message' => "Successfully Create Blog Post",
+                    'data' => [
+                         'blog' => $result
+                    ]
                ]);
-               exit();
+          } catch (PDOException $e) {
+               echo json_encode(['error' => 'Failed to create blog post: ' . $e->getMessage()], JSON_PRETTY_PRINT);
           }
-          // Proceed to delete the blog post
-          $model->delete($id);
-          echo json_encode(['message' => 'Deleted successfully']);
+     }
+
+     // * PUT
+     public function update($id)
+     {
+          try {
+               $this->auth->authenticate();
+               $Blog = $this->blogModel;
+               $getBlogId = $Blog->getById($id);
+               if (empty($getBlogId)) {
+                    http_response_code(404);
+                    echo json_encode([
+                         'error' => 'Blog not found',
+                    ]);
+                    exit();
+               }
+               $input = json_decode(file_get_contents('php://input'), true);
+               header("Content-Type: application/json");
+               // * validation simple input
+               $this->addRule('title', 'string|required|min:3|max:50');
+               $this->addRule('content', 'string|required|min:3|max:255');
+
+               $errors = $this->validate($input);
+               if (!empty($errors)) {
+                    http_response_code(400);
+                    echo json_encode(['errors' => $errors]);
+                    exit();
+               }
+               //  * validate author
+               $Blog->confirm_author($id, $this->auth->authenticate());
+               // * create blog post
+               $result = $Blog->update($id, $input, $this->auth->authenticate());
+               echo json_encode([
+                    'message' => "Successfully Update Blog Post",
+                    'data' => [
+                         'blog' => $result
+                    ]
+               ]);
+          } catch (PDOException $e) {
+               echo json_encode(['error' => 'Failed to create blog post: ' . $e->getMessage()], JSON_PRETTY_PRINT);
+          }
+     }
+
+     // * DELETE
+     public function delete($id)
+     {
+          try {
+               $this->auth->authenticate();
+               $Blog = $this->blogModel;
+               $result =  $Blog->getById($id);
+               if (empty($result)) {
+                    http_response_code(404);
+                    echo json_encode([
+                         'error' => 'Blog not found',
+                    ]);
+                    exit();
+               }
+               //  * validate author
+               $Blog->confirm_author($id, $this->auth->authenticate());
+               //* Delete blog post
+               $Blog->delete($id);
+               echo json_encode(['message' => 'Deleted successfully']);
+          } catch (PDOException $e) {
+               echo json_encode(['error' => 'Failed to create blog post: ' . $e->getMessage()], JSON_PRETTY_PRINT);
+          }
      }
 }

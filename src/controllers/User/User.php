@@ -2,23 +2,29 @@
 
 namespace App\Controllers\User;
 
-use Dotenv\Validator;
+
 use PDOException;
 use Exception;
 use Firebase\JWT\JWT;
-use DotenvVault\DotenvVault;
 use App\Core\Validation;
 use App\Model\UserModel;
+use Dotenv\Dotenv;
 
-$dotenv = DotenvVault::createImmutable(dirname(__DIR__, 3)); // Go up 3 levels to the project root
-$dotenv->safeLoad();
+$dotenv = Dotenv::createImmutable(dirname(__DIR__, 3), '.env');
+$dotenv->load();
 
 class User extends Validation
 {
-     public  function register($pdo)
+     private UserModel $userModel;
+
+     public function __construct()
+     {
+          $this->userModel = new UserModel();
+     }
+     public  function register()
      {
           try {
-               $user = new UserModel();
+               $user = $this->userModel;
                $input = json_decode(file_get_contents('php://input'), true);
                header("Content-Type: application/json");
                // * validation simple input
@@ -47,10 +53,10 @@ class User extends Validation
                echo json_encode(['error' => 'Failed to create blog post: ' . $e->getMessage()], JSON_PRETTY_PRINT);
           }
      }
-     public  function login($pdo)
+     public  function login()
      {
           try {
-               $user = new UserModel();
+               $user = $this->userModel;
                $input = json_decode(file_get_contents('php://input'), true);
                header("Content-Type: application/json");
                // * validation simple input
@@ -73,9 +79,11 @@ class User extends Validation
                     echo json_encode(['message' => 'Email or password incorrect']);
                     exit();
                }
+
                // * generate jwt token
                $expiration_time = time() + 900;
                $payload = [
+                    'id' => $result['user_id'],
                     'email' => $result['email'],
                     'exp' => $expiration_time
                ];

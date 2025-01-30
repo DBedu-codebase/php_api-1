@@ -13,17 +13,18 @@ class Routes extends Config
 {
      public function run()
      {
-          // $PDO = new Config();
           $router = new App();
           $User = new User();
           $Blog = new Blog();
-          $router->post('/api/v1/auth/register', fn() => $User->register($this->getPdo()));
-          $router->post('/api/v1/auth/login', fn() => $User->login($this->getPdo()));
-          $router->get('/api/v1/blog', fn() => $Blog->getAll($this->getPdo()));
-          $router->post('/api/v1/blog', fn() => $Blog->getAll($this->getPdo()));
-          $router->put('/api/v1/blog/:id', fn($id) => $Blog->getAll($this->getPdo()));
-          $router->get('/api/v1/blog/:id', fn($id) => $Blog->getBlogById($this->getPdo(), $id));
-          $router->delete('/api/v1/blog/:id', fn($id) => $Blog->delete($this->getPdo(), $id));
+          // * Routes Authentication 
+          $router->post('/api/v1/auth/register', fn() => $User->register());
+          $router->post('/api/v1/auth/login', fn() => $User->login());
+          // * Routes Blog
+          $router->get('/api/v1/blog', fn() => $Blog->getAll());
+          $router->get('/api/v1/blog/:id', fn($id) => $Blog->getBlogById($id));
+          $router->post('/api/v1/blog', fn() => $Blog->create());
+          $router->put('/api/v1/blog/:id', fn($id) => $Blog->update($id));
+          $router->delete('/api/v1/blog/:id', fn($id) => $Blog->delete($id));
           $router->run();
      }
 }
