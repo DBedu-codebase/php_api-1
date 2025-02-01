@@ -28,9 +28,14 @@ class User extends Validation
                $input = json_decode(file_get_contents('php://input'), true);
                header("Content-Type: application/json");
                // * validation simple input
-               $this->addRule('email', 'email|required');
-               $this->addRule('username', 'string|required|min:3|max:50');
-               $this->addRule('password_hash', 'password|required|min:8|max:255');
+               $validationRules = [
+                    'email' => 'required|email',
+                    'username' => 'required|string|min:3|max:50',
+                    'password_hash' => 'required|password|min:8|max:255',
+               ];
+               foreach ($validationRules as $key => $rule) {
+                    $this->addRule($key, $rule);
+               }
 
                $errors = $this->validate($input);
                if (!empty($errors)) {
@@ -60,9 +65,19 @@ class User extends Validation
                $input = json_decode(file_get_contents('php://input'), true);
                header("Content-Type: application/json");
                // * validation simple input
-               if (empty($input['email']) || empty($input['password_hash'])) {
+               // * validation simple input
+               $validationRules = [
+                    'email' => 'required|email',
+                    'password_hash' => 'required',
+               ];
+               foreach ($validationRules as $key => $rule) {
+                    $this->addRule($key, $rule);
+               }
+
+               $errors = $this->validate($input);
+               if (!empty($errors)) {
                     http_response_code(400);
-                    echo json_encode(['message' => 'Invalid input']);
+                    echo json_encode(['errors' => $errors]);
                     exit();
                }
                // * check email and password from db

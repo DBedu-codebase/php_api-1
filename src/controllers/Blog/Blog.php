@@ -11,7 +11,6 @@ class Blog extends Validation
 {
      private Auth $auth;
      private BlogModel $blogModel;
-
      public function __construct()
      {
           $this->auth = new Auth();
@@ -21,7 +20,6 @@ class Blog extends Validation
      // * GET
      public function getAll()
      {
-          $this->auth->authenticate();
           $result = $this->blogModel->getAll();
           echo json_encode([
                'message' => "Successfully Get All Blog",
@@ -59,8 +57,13 @@ class Blog extends Validation
                $input = json_decode(file_get_contents('php://input'), true);
                header("Content-Type: application/json");
                // * validation simple input
-               $this->addRule('title', 'string|required|min:3|max:50');
-               $this->addRule('content', 'string|required|min:3|max:255');
+               $validationRules = [
+                    'title' => 'required|string|min:3|max:50',
+                    'content' => 'required|string|min:3|max:255',
+               ];
+               foreach ($validationRules as $key => $rule) {
+                    $this->addRule($key, $rule);
+               }
 
                $errors = $this->validate($input);
                if (!empty($errors)) {
@@ -98,8 +101,13 @@ class Blog extends Validation
                $input = json_decode(file_get_contents('php://input'), true);
                header("Content-Type: application/json");
                // * validation simple input
-               $this->addRule('title', 'string|required|min:3|max:50');
-               $this->addRule('content', 'string|required|min:3|max:255');
+               $validationRules = [
+                    'title' => 'required|string|min:3|max:50',
+                    'content' => 'required|string|min:3|max:255',
+               ];
+               foreach ($validationRules as $key => $rule) {
+                    $this->addRule($key, $rule);
+               }
 
                $errors = $this->validate($input);
                if (!empty($errors)) {
