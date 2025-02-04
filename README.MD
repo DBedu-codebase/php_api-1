@@ -162,7 +162,7 @@ POST /api/v1/auth/register
 }
 ```
 ```json 
-POST /api/v1/auth/blog || PUT /api/v1/auth/blog/2
+POST /api/v1/blog || PUT /api/v1/blog/2
 {
     "errors": {
         "title": "min of 3 characters is required",
